@@ -121,7 +121,7 @@
   (setf (docinfo doc) (make-instance 'indirect-object))
   (setf (content (docinfo doc))
 	(make-instance 'dictionary
-		       :dict-values `(("/Creator" . ,(format nil "(cl-pdf ~A - ~A)" *version* creator))
+		       :dict-values `(("/Creator" . ,(format nil "(~A)" creator))
 				      ,@(when author `(("/Author" . ,(format nil "(~A)" author))))
 				      ,@(when title `(("/Title" . ,(format nil "(~A)" title))))
 				      ,@(when subject `(("/Subject" . ,(format nil "(~A)" subject))))
