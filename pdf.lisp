@@ -429,8 +429,11 @@
   (vector-push-extend annotation (annotations *page*))
   (setf (content annotation)
 	(make-instance 'dictionary
-		       :dict-values `(("/Type" . "/Annot")("/Subtype" . ,type)
-				      ("/Rect" . ,rect)("/Border" . ,border)))))
+		       :dict-values `(("/Type" . "/Annot")
+							  ("/Subtype" . ,type)
+							  ("/F" . 4)
+							  ("/Rect" . ,rect)
+							  ("/Border" . ,border)))))
 
 (defclass annotation2 (indirect-object)
   ())
@@ -510,7 +513,8 @@
 			  *xrefs*)
       (format *pdf-stream* "~d ~d obj~%" (obj-number obj)(gen-number obj))
       (when (content obj)(write-object (content obj)))
-      (write-string " endobj" *pdf-stream*)
+      ;; (write-char #\Newline *pdf-stream*)
+      (write-string "endobj" *pdf-stream*)
       (write-char #\Newline *pdf-stream*))
     (format *pdf-stream* "~d ~d R" (obj-number obj)(gen-number obj))))
 
@@ -566,13 +570,21 @@
 (defgeneric write-document (target &optional document))
 
 (defmethod write-document ((s stream) &optional (document *document*))
-   (let ((*xrefs* (make-array 10 :adjustable t :fill-pointer 0))
-	 startxref
-	 (*pdf-stream* s))
+  (let ((*xrefs* (make-array 10 :adjustable t :fill-pointer 0))
+        (id (format nil "~x~x~x" 
+                    (get-universal-time) 
+                    (random (expt 16 7))
+                    (random (expt 16 7))))
+        startxref
+        (*pdf-stream* s))
      (with-standard-io-syntax
        (process-outlines document)
        (vector-push-extend "0000000000 65535 f " *xrefs*)
-       (write-line +pdf-header+ *pdf-stream*)
+       (write-line +pdf-header+ s)
+       (write-char #\% s)
+       (dotimes (i 4)
+         (write-byte (+ 200 i) s))
+       (write-char #\Newline s)
        (loop for obj across (objects document)
 	     for first = t then nil
 	     if obj do (write-object obj t)
@@ -581,7 +593,9 @@
        (format *pdf-stream* "xref~%0 ~d~%" (length *xrefs*))
        (loop for xref across *xrefs*
 	     do (write-line xref s))
-       (format s "trailer~%<< /Size ~d~%/Root " (length *xrefs*));(1- (length (objects document))))
+       (format s "trailer~%<< /ID [<~a> <~a>] /Size ~d~%/Root "
+               id id
+               (length *xrefs*));(1- (length (objects document))))
        (write-object (catalog document))
        (when (docinfo document)
 	 (format s " /Info ")
