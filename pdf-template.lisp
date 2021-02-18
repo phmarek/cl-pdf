@@ -221,7 +221,8 @@ objects."))
     (setf (content new-stream)
           (copy-pdf-structure (content obj)))
     ;; I think this suppresses compressing the stream again..?
-    (setf (no-compression new-stream) t)
+    (setf (no-compression new-stream) 
+          (no-compression obj))
     (loop for ((name . value)) on (dict-values obj) do
           (change-dict-value new-stream name (copy-pdf-structure value)))
 

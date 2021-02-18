@@ -60,14 +60,19 @@
 (defun compress-pdf-stream (pdf-stream)
 ;  #+use-no-zlib (declare (ignore pdf-stream))
 ;  #-use-no-zlib
-  (when (and *compress-streams* (not (no-compression pdf-stream))
-	     (> (length (content pdf-stream)) *min-size-for-compression*))
-    (setf (content pdf-stream) (compress-string (content pdf-stream)))
+  (when (or (eq :already-compressed (no-compression pdf-stream))
+            (and *compress-streams* 
+                 (not (no-compression pdf-stream))
+                 (> (length (content pdf-stream)) 
+                    *min-size-for-compression*)))
+    (unless (eq :already-compressed (no-compression pdf-stream))
+      (setf (content pdf-stream) 
+            (compress-string (content pdf-stream))))
     (let ((filter (get-dict-value pdf-stream "/Filter")))
       (if filter
-	  (change-dict-value pdf-stream "/Filter" (vector "/FlateDecode" filter))
-	  (add-dict-value pdf-stream "/Filter" "/FlateDecode")))
-    (setf (no-compression pdf-stream) t)))
+          (change-dict-value pdf-stream "/Filter" (vector "/FlateDecode" filter))
+          (add-dict-value pdf-stream "/Filter" "/FlateDecode")))
+    (setf (no-compression pdf-stream) :already-compressed)))
 
 (defclass document ()
   ((objects :accessor objects :initform nil)

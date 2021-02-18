@@ -118,4 +118,7 @@
             (binary-data ttffm)
             (make-array (length1 ttffm) :element-type '(unsigned-byte 8) :initial-element 0))
       (read-sequence (binary-data ttffm) in))
+    (when *compress-fonts*
+        (setf (compressed-binary-data ttffm)
+              (compress-string (binary-data ttffm))))
     ttffm))

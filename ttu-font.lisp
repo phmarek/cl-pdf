@@ -16,6 +16,7 @@
    (cid-widths :accessor cid-widths :initform (make-array 0 :adjustable t :fill-pointer 0))
    (pdf-widths :accessor pdf-widths :initform nil)
    (binary-data :accessor binary-data :initform nil)
+   (compressed-binary-data :accessor compressed-binary-data :initform nil)
    (min-code :accessor min-code :initform 0)
    (max-code :accessor max-code :initform 0)
    (length1 :accessor length1)))
@@ -66,9 +67,12 @@
 		   :content
 		   (make-instance
 		    'pdf-stream
-		    :content (binary-data fm)
-		    :no-compression (not *compress-fonts*)
-		    :dict-values `(("/Length1" . ,(length1 fm)))))))))))))
+		    :content (or (compressed-binary-data fm)
+                                 (binary-data fm))
+		    :no-compression (if (compressed-binary-data fm)
+                                        :already-compressed
+                                        (not *compress-fonts*))
+                    :dict-values `(("/Length1" . ,(length1 fm)))))))))))))
 
 (defclass cid-font ()
   ((base-font :accessor base-font :initarg :base-font)
